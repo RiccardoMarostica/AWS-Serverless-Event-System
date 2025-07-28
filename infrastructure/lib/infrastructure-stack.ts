@@ -136,6 +136,8 @@ export class InfrastructureStack extends cdk.Stack {
         period: apiGatewayConfig.quota.period || Period.MONTH
       }
     });
+    // Associate the API Key with the usage plan
+    usagePlan.addApiKey(apiKey);
 
     // Create the /subscribe resource and link it to the subscription Lambda function
     const subscribeResource = api.root.addResource('subscribe');
