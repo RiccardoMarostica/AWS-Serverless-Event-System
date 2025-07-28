@@ -5,6 +5,8 @@ import { getDurationInSeconds, getLambdaArchitecture } from '../utils/utils';
 import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import { Cors, EndpointType, LambdaIntegration, Period, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { Tags } from 'aws-cdk-lib';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -153,8 +155,20 @@ export class InfrastructureStack extends cdk.Stack {
 
 
     // SNS Topic - Event notifications
+    const eventNotificationTopicConfig = envsConfig[env].eventNotificationTopic;
+    const eventNotificationTopic = new Topic(this, 'EventNotificationTopic', {
+      topicName: `${projectName}-event-notification-topic-${env}`,
+      displayName: 'Event Notification Topic',
+      fifo: eventNotificationTopicConfig.fifo || false,
+      contentBasedDeduplication: eventNotificationTopicConfig.fifo ? (eventNotificationTopicConfig.contentBasedDeduplication || false) : undefined,
+      enforceSSL: eventNotificationTopicConfig?.enforceSSL || false,
+    });
+    eventNotificationTopic.grantSubscribe(subscriptionLambda);
+    eventNotificationTopic.grantPublish(eventRegistrationLambda);
 
-
-
+    
+    // Lastly, add tags to resources
+    Tags.of(this).add('project', projectName);
+    Tags.of(this).add('env', env);
   }
 }
