@@ -115,6 +115,18 @@
             "restrictPublicBuckets": true
           },
           "enforceSSL": true
+        },
+        "apiGateway": {
+          "endpointTypes": [ "REGIONAL" ],
+          "allowOrigins": [ "*" ],
+          "allowMethods": [ "POST", "OPTIONS" ],
+          "allowHeaders": [ "Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token" ],
+          "burstLimit": 100,
+          "rateLimit": 50,
+          "quota": {
+            "limit": 1000,
+            "period": "MONTH"
+          }
         }
       },
       "qa": {

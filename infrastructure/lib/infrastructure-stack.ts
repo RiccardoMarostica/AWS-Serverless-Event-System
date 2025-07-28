@@ -2,8 +2,9 @@ import * as cdk from 'aws-cdk-lib';
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import { getDurationInSeconds, getLambdaArchitecture } from '../utils/utils';
-import { Role, ServicePrincipal, ManagedPolicy, Policy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
+import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
+import { Cors, EndpointType, LambdaIntegration, Period, RestApi } from 'aws-cdk-lib/aws-apigateway';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -93,11 +94,65 @@ export class InfrastructureStack extends cdk.Stack {
       role: eventRegistrationRole
     });
 
+    
+    // API Gateway - Event registration and subscription API
+    const apiGatewayConfig = envsConfig[env].apiGateway;
+    const api = new RestApi(this, 'EventSystemApi', {
+      restApiName: `${projectName}-api-${env}`,
+      description: 'API for event registration and subscription',
+      endpointTypes: apiGatewayConfig.endpointTypes || [EndpointType.REGIONAL],
+      defaultCorsPreflightOptions: {
+        allowOrigins: apiGatewayConfig.allowOrigins || Cors.ALL_ORIGINS,
+        allowMethods: apiGatewayConfig.allowMethods || Cors.ALL_METHODS,
+        allowHeaders: apiGatewayConfig.allowHeaders || Cors.DEFAULT_HEADERS
+      },
+      deploy: true,
+      deployOptions: {
+        stageName: env,
+        description: `Deployment stage for ${projectName} in ${env}`
+      }
+    });
+
+    // Create the API Key for usage plans
+    const apiKey = api.addApiKey('EventSystemApiKey', {
+      apiKeyName: `${projectName}-api-key-${env}`,
+      description: 'API Key for Event System API'
+    });
+
+    // Create a usage plan for the API
+    const usagePlan = api.addUsagePlan('EventSystemUsagePlan', {
+      name: `${projectName}-usage-plan-${env}`,
+      description: 'Usage plan for Event System API',
+      apiStages: [{
+        api: api,
+        stage: api.deploymentStage
+      }],
+      throttle: {
+        burstLimit: apiGatewayConfig.burstLimit || 100,
+        rateLimit: apiGatewayConfig.rateLimit || 50
+      },
+      quota: {
+        limit: apiGatewayConfig.quota.limit || 1000,
+        period: apiGatewayConfig.quota.period || Period.MONTH
+      }
+    });
+
+    // Create the /subscribe resource and link it to the subscription Lambda function
+    const subscribeResource = api.root.addResource('subscribe');
+    subscribeResource.addMethod('POST', new LambdaIntegration(subscriptionLambda), {
+      apiKeyRequired: true
+    });
+
+    // Create the /event resource and link it to the event registration Lambda function
+    const eventResource = api.root.addResource('event');
+    eventResource.addMethod('POST', new LambdaIntegration(eventRegistrationLambda), {
+      apiKeyRequired: true
+    });
+
 
     // SNS Topic - Event notifications
 
 
-    // API Gateway - Event registration and subscription API
 
   }
 }
