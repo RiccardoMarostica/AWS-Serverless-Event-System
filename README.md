@@ -35,7 +35,7 @@ You can customize these values before deploying the stack.
   ```
 - **Diff local changes against deployed stack**
   ```
-  npm run cdk:deploy --profile <PROFILE_NAME>
+  npm run cdk:diff --profile <PROFILE_NAME>
   ```
 
 where ```<PROFILE_NAME>``` is an AWS account profile in your configuration file (AWS CLI).

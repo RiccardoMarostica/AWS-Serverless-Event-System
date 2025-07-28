@@ -92,6 +92,27 @@
     "@aws-cdk/s3-notifications:addS3TrustKeyPolicyForSnsSubscriptions": true,
     "@aws-cdk/aws-ec2:requirePrivateSubnetsForEgressOnlyInternetGateway": true,
     "@aws-cdk/aws-s3:publicAccessBlockedByDefault": true,
-    "@aws-cdk/aws-lambda:useCdkManagedLogGroup": true
+    "@aws-cdk/aws-lambda:useCdkManagedLogGroup": true,
+    "envs": {
+      "dev": {
+        "projectName": "serverless-event-system",
+        "subscriptionLambda": {
+          "architecture": "X86_64",
+          "memorySize": 256,
+          "timeout": 180
+        },
+        "eventRegistrationLambda": {
+          "architecture": "X86_64",
+          "memorySize": 256,
+          "timeout": 180
+        }
+      },
+      "qa": {
+        "projectName": "serverless-event-system"
+      },
+      "prod": {
+        "projectName": "serverless-event-system"
+      }
+    }
   }
 }
