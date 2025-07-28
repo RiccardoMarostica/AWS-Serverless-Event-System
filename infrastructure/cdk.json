@@ -105,6 +105,16 @@
           "architecture": "X86_64",
           "memorySize": 256,
           "timeout": 180
+        },
+        "eventRegistrationBucket": {
+          "versioned": true,
+          "blockPublicAccess": {
+            "blockPublicAcls": true,
+            "blockPublicPolicy": true,
+            "ignorePublicAcls": true,
+            "restrictPublicBuckets": true
+          },
+          "enforceSSL": true
         }
       },
       "qa": {

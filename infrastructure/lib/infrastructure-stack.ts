@@ -2,7 +2,8 @@ import * as cdk from 'aws-cdk-lib';
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import { getDurationInSeconds, getLambdaArchitecture } from '../utils/utils';
-import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import { Role, ServicePrincipal, ManagedPolicy, Policy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
+import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -18,7 +19,26 @@ export class InfrastructureStack extends cdk.Stack {
     // Retrieve project name (used as prefix for all resources)
     const projectName = envsConfig[env].projectName;
 
-    // Define your AWS resources here
+
+    // S3 Bucket - Event registration storage
+    const eventStorageBucketConfig = envsConfig[env].eventStorageBucket;
+    const eventStorageBucket = new Bucket(this, 'EventStorageBucket', {
+      bucketName: `${projectName}-event-storage-bucket-${env}`,
+      versioned: eventStorageBucketConfig?.versioned || true,
+      blockPublicAccess: eventStorageBucketConfig?.blockPublicAccess || BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: eventStorageBucketConfig?.enforceSSL || true
+    });
+
+    // Create a policy statement to allow Lambda functions to access the S3 bucket
+    let lambdaStorageBucketPolicy = new PolicyStatement({
+       actions: [
+        's3:GetObject',
+        's3:PutObject'
+      ],
+      resources: [eventStorageBucket.bucketArn],
+      effect: Effect.ALLOW
+    });
+
 
     // IAM Role - Lambda execution role
     const subscriptionLambdaRole = new Role(this, 'SubscriptionLambdaRole', {
@@ -29,6 +49,7 @@ export class InfrastructureStack extends cdk.Stack {
         ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")
       ]
     });
+    subscriptionLambdaRole.addToPolicy(lambdaStorageBucketPolicy);
 
     // Lambda function - Subscription to SNS topic
     const subscriptionLambdaConfig = envsConfig[env].subscriptionLambda;
@@ -55,6 +76,7 @@ export class InfrastructureStack extends cdk.Stack {
         ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")
       ]
     });
+    eventRegistrationRole.addToPolicy(lambdaStorageBucketPolicy);
 
     // Lambda function - Event registration
     const eventRegistrationLambdaConfig = envsConfig[env].eventRegistrationLambda;
@@ -70,9 +92,6 @@ export class InfrastructureStack extends cdk.Stack {
       timeout: getDurationInSeconds(eventRegistrationLambdaConfig.timeout),
       role: eventRegistrationRole
     });
-
-
-    // S3 Bucket - Event registration storage
 
 
     // SNS Topic - Event notifications
