@@ -8,7 +8,7 @@ const logger = getPinoLogger();
 // Environment variables
 const TOPIC_ARN = process.env.TOPIC_ARN!;
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   try {
 
     logger.info('Received event:', { event });

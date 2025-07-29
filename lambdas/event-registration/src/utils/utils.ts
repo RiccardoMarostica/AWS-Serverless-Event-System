@@ -9,14 +9,7 @@ let PINO_LOGGER: Logger;
 export const getPinoLogger = (): Logger => {
   if (!PINO_LOGGER) {
     PINO_LOGGER = require('pino')({
-      level: process.env.LOG_LEVEL || 'info',
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard'
-        }
-      }
+      level: process.env.LOG_LEVEL || 'info'
     });
   }
   return PINO_LOGGER;
