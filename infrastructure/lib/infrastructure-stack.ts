@@ -166,6 +166,9 @@ export class InfrastructureStack extends cdk.Stack {
     eventNotificationTopic.grantSubscribe(subscriptionLambda);
     eventNotificationTopic.grantPublish(eventRegistrationLambda);
 
+    // Add environment variables to Lambda functions for the SNS topic ARN
+    subscriptionLambda.addEnvironment('EVENT_NOTIFICATION_TOPIC_ARN', eventNotificationTopic.topicArn);
+    eventRegistrationLambda.addEnvironment('EVENT_NOTIFICATION_TOPIC_ARN', eventNotificationTopic.topicArn);
     
     // Lastly, add tags to resources
     Tags.of(this).add('project', projectName);
