@@ -1,0 +1,39 @@
+{
+  "name": "infrastructure",
+  "version": "0.1.0",
+  "bin": {
+    "infrastructure": "bin/infrastructure.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "cdk:bootstrap": "cdk bootstrap --profile=$npm_config_profile",
+    "cdk:synth": "cdk synth --contenxt env=dev",
+    "cdk:synth-qa": "cdk synth --contenxt env=qa",
+    "cdk:synth-prod": "cdk synth --contenxt env=prod",
+    "cdk:deploy": "cdk deploy --contenxt env=dev --profile=$npm_config_profile",
+    "cdk:deploy-qa": "cdk deploy --contenxt env=qa --profile=$npm_config_profile",
+    "cdk:deploy-prod": "cdk deploy --contenxt env=prod --profile=$npm_config_profile",
+    "cdk:diff": "cdk diff --contenxt env=dev --profile=$npm_config_profile",
+    "cdk:diff-qa": "cdk diff --contenxt env=qa --profile=$npm_config_profile",
+    "cdk:diff-prod": "cdk diff --contenxt env=prod --profile=$npm_config_profile",
+    "cdk:destroy": "cdk destroy --contenxt env=dev --profile=$npm_config_profile",
+    "cdk:destroy-qa": "cdk destroy --contenxt env=qa --profile=$npm_config_profile",
+    "cdk:destroy-prod": "cdk destroy --contenxt env=prod --profile=$npm_config_profile"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "22.7.9",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "aws-cdk": "2.1018.1",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.6.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.200.1",
+    "constructs": "^10.0.0"
+  }
+}
