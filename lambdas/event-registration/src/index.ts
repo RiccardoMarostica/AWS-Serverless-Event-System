@@ -10,12 +10,12 @@ const logger = getPinoLogger();
 // Environment variables
 const BUCKET_NAME = process.env.BUCKET_NAME!;
 const OBJECT_KEY = process.env.OBJECT_KEY || 'events.json';
-const TOPIC_ARN = process.env.TOPIC_ARN!;
+const TOPIC_ARN = process.env.EVENT_NOTIFICATION_TOPIC_ARN!;
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayEvent) => {
   try {
 
-    logger.info('Received event:', { event });
+    logger.info({ msg: 'Received event', event });
 
     // Retrieve the email address from the request body
     const newEvent = JSON.parse(event.body || '{}');
@@ -32,10 +32,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayEvent) =>
 
     // Parse the existing events from the S3 object
     let currentEvents: any[] = JSON.parse(await s3Object.Body!.transformToString('utf-8'));
-    logger.info('Current events retrieved from S3:', { currentEvents });
+    logger.info({ msg: 'Current events retrieved from S3', currentEvents });
 
     currentEvents.push(newEvent);
-    logger.info('Current events after adding new event:', { currentEvents });
+    logger.info({ msg: 'New event added', newEvent });
 
     // Store the updated events back to S3
     await s3.send(new PutObjectCommand({
@@ -53,10 +53,12 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayEvent) =>
     }));
 
     // Return a 200 OK response with a message
-    return getResponse(200, { message: 'Subscription requested. Please check your email to confirm.' });
+    return getResponse(200, { message: 'Event registered successfully.' });
 
   } catch (error) {
-    logger.info('Error processing event:', { error });
+
+    logger.error({ msg: 'Error processing subscription', error });
+    
     // Return a 500 Internal Server Error response if an error occurs
     return getResponse(500, { error: 'Internal server error.' });
   }

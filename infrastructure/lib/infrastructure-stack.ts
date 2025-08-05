@@ -34,11 +34,14 @@ export class InfrastructureStack extends cdk.Stack {
 
     // Create a policy statement to allow Lambda functions to access the S3 bucket
     let lambdaStorageBucketPolicy = new PolicyStatement({
-       actions: [
+      actions: [
         's3:GetObject',
         's3:PutObject'
       ],
-      resources: [eventStorageBucket.bucketArn],
+      resources: [
+        eventStorageBucket.bucketArn,
+        `${eventStorageBucket.bucketArn}/*`
+      ],
       effect: Effect.ALLOW
     });
 
@@ -96,7 +99,7 @@ export class InfrastructureStack extends cdk.Stack {
       role: eventRegistrationRole
     });
 
-    
+
     // API Gateway - Event registration and subscription API
     const apiGatewayConfig = envsConfig[env].apiGateway;
     const api = new RestApi(this, 'EventSystemApi', {
@@ -170,7 +173,7 @@ export class InfrastructureStack extends cdk.Stack {
     subscriptionLambda.addEnvironment('EVENT_NOTIFICATION_TOPIC_ARN', eventNotificationTopic.topicArn);
     eventRegistrationLambda.addEnvironment('EVENT_NOTIFICATION_TOPIC_ARN', eventNotificationTopic.topicArn);
     eventRegistrationLambda.addEnvironment('BUCKET_NAME', eventStorageBucket.bucketName);
-    
+
     // Lastly, add tags to resources
     Tags.of(this).add('project', projectName);
     Tags.of(this).add('env', env);

@@ -6,12 +6,12 @@ const sns = getSNSClient();
 const logger = getPinoLogger();
 
 // Environment variables
-const TOPIC_ARN = process.env.TOPIC_ARN!;
+const TOPIC_ARN = process.env.EVENT_NOTIFICATION_TOPIC_ARN!;
 
-export const handler = async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent, context: any) => {
   try {
 
-    logger.info('Received event:', { event });
+    logger.info({ msg: 'Received event', event });
 
     // Retrieve the email address from the request body
     const body = JSON.parse(event.body || '{}');
@@ -36,6 +36,9 @@ export const handler = async (event: APIGatewayEvent) => {
     return getResponse(200, { message: 'Subscription requested. Please check your email to confirm.' });
 
   } catch (error) {
+
+    logger.error({ msg: 'Error processing subscription', error });
+
     // Return a 500 Internal Server Error response if an error occurs
     return getResponse(500, { error: 'Internal server error.' });
   }
