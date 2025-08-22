@@ -138,12 +138,24 @@ describe('ErrorHandlerService', () => {
   });
 
   it('should emit error updates', (done) => {
+    // Mock navigator.onLine to be true to avoid offline detection
+    const originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+    Object.defineProperty(navigator, 'onLine', {
+      writable: true,
+      value: true
+    });
+
     const testError = new Error('Test error');
     
     service.error$.subscribe(errorInfo => {
-      if (errorInfo) {
+      if (errorInfo && errorInfo.type === ErrorType.GENERIC_ERROR) {
         expect(errorInfo.type).toBe(ErrorType.GENERIC_ERROR);
         expect(errorInfo.message).toBe('Test error');
+        
+        // Restore original property
+        if (originalOnLine) {
+          Object.defineProperty(navigator, 'onLine', originalOnLine);
+        }
         done();
       }
     });
@@ -235,6 +247,13 @@ describe('ErrorHandlerService', () => {
     // Create a fresh service instance for this test
     const offlineService = new ErrorHandlerService();
     
+    // Mock offline first
+    const originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+    Object.defineProperty(navigator, 'onLine', {
+      writable: true,
+      value: false
+    });
+    
     let errorReceived = false;
     
     offlineService.error$.subscribe(error => {
@@ -242,7 +261,6 @@ describe('ErrorHandlerService', () => {
         errorReceived = true;
         
         // Simulate coming back online
-        const originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
         Object.defineProperty(navigator, 'onLine', {
           writable: true,
           value: true
@@ -262,15 +280,8 @@ describe('ErrorHandlerService', () => {
         }, 100);
       }
     });
-
-    // Mock offline and trigger offline event
-    const originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
-    Object.defineProperty(navigator, 'onLine', {
-      writable: true,
-      value: false
-    });
     
-    // Trigger offline event
+    // Trigger offline event to start the test
     window.dispatchEvent(new Event('offline'));
   });
 });

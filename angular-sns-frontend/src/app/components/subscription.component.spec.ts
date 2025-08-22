@@ -29,8 +29,16 @@ describe('SubscriptionComponent', () => {
         ]);
         const apiServiceSpy = jasmine.createSpyObj('ApiService', ['subscribe']);
         const loadingServiceSpy = jasmine.createSpyObj('LoadingService', ['setLoading']);
-        const errorHandlerSpy = jasmine.createSpyObj('ErrorHandlerService', ['handleError', 'clearError']);
-        const connectivitySpy = jasmine.createSpyObj('ConnectivityService', ['getCurrentStatus']);
+        const errorHandlerSpy = jasmine.createSpyObj('ErrorHandlerService', ['handleError', 'clearError'], {
+            error$: of(null)
+        });
+        const connectivitySpy = jasmine.createSpyObj('ConnectivityService', ['getCurrentStatus'], {
+            connectivity$: of({
+                isOnline: true,
+                connectionType: 'wifi',
+                lastChecked: new Date()
+            })
+        });
 
         await TestBed.configureTestingModule({
             imports: [SubscriptionComponent, ReactiveFormsModule, HttpClientTestingModule],
@@ -118,9 +126,18 @@ describe('SubscriptionComponent', () => {
             const emailControl = component.subscriptionForm.get('email');
             emailControl?.setValue('');
             emailControl?.markAsTouched();
+            
+            // Set up the mock to return the expected error info
+            mockValidationService.getFieldErrorInfo.and.returnValue({
+                hasError: true,
+                errorType: 'required',
+                message: 'Invalid email',
+                severity: 'error' as const,
+                suggestions: []
+            });
 
             const errorMessage = component.getFieldErrorMessage('email');
-            expect(mockValidationService.getErrorMessage).toHaveBeenCalled();
+            expect(mockValidationService.getFieldErrorInfo).toHaveBeenCalled();
             expect(errorMessage).toBe('Invalid email');
         });
     });
@@ -310,7 +327,7 @@ describe('SubscriptionComponent', () => {
             };
             fixture.detectChanges();
 
-            const errorMessage = fixture.nativeElement.querySelector('.error-message-container');
+            const errorMessage = fixture.nativeElement.querySelector('.error-message');
             expect(errorMessage).toBeTruthy();
             expect(errorMessage.textContent).toContain('Failed!');
         });

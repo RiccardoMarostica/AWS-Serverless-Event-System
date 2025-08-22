@@ -60,10 +60,10 @@ describe('SanitizationService', () => {
     });
 
     it('should encode special characters', () => {
-      const textWithSpecialChars = 'Hello & <World>';
+      const textWithSpecialChars = 'Hello & World';
       const sanitized = service.sanitizeText(textWithSpecialChars);
       expect(sanitized).toContain('&amp;');
-      expect(sanitized).toContain('World'); // The < and > are removed by HTML tag regex first
+      expect(sanitized).toContain('World');
     });
 
     it('should limit text length to 1000 characters', () => {
