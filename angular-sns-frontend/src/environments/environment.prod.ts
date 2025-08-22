@@ -10,5 +10,8 @@ export const environment = {
     enableCSP: true,
     sanitizeInputs: true,
     validateApiKey: true
-  }
+  },
+  // Production-specific settings
+  enableDebugMode: false, // Disable debugging in production
+  logLevel: 'error' // Only log errors in production
 };

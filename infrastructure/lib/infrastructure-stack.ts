@@ -3,10 +3,22 @@ import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import { getDurationInSeconds, getLambdaArchitecture } from '../utils/utils';
 import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
-import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
+import { BlockPublicAccess, Bucket, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
 import { Cors, EndpointType, LambdaIntegration, Period, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { Tags } from 'aws-cdk-lib';
+import { 
+  Distribution, 
+  OriginAccessIdentity, 
+  ViewerProtocolPolicy, 
+  AllowedMethods,
+  CachePolicy,
+  OriginRequestPolicy,
+  ResponseHeadersPolicy,
+  HeadersFrameOption,
+  HeadersReferrerPolicy
+} from 'aws-cdk-lib/aws-cloudfront';
+import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -173,6 +185,168 @@ export class InfrastructureStack extends cdk.Stack {
     subscriptionLambda.addEnvironment('EVENT_NOTIFICATION_TOPIC_ARN', eventNotificationTopic.topicArn);
     eventRegistrationLambda.addEnvironment('EVENT_NOTIFICATION_TOPIC_ARN', eventNotificationTopic.topicArn);
     eventRegistrationLambda.addEnvironment('BUCKET_NAME', eventStorageBucket.bucketName);
+
+
+    // Frontend Infrastructure - S3 Bucket for static website hosting
+    const frontendBucketConfig = envsConfig[env].frontendBucket || {};
+    const frontendBucket = new Bucket(this, 'FrontendBucket', {
+      bucketName: `${projectName}-frontend-${env}`,
+      websiteIndexDocument: 'index.html',
+      websiteErrorDocument: 'error.html',
+      publicReadAccess: true,
+      blockPublicAccess: new BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false
+      }),
+      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL,
+      enforceSSL: frontendBucketConfig?.enforceSSL || true,
+      versioned: frontendBucketConfig?.versioned || false
+    });
+
+    // Origin Access Identity for CloudFront
+    const originAccessIdentity = new OriginAccessIdentity(this, 'FrontendOAI', {
+      comment: `OAI for ${projectName} frontend in ${env}`
+    });
+
+    // Grant CloudFront access to the S3 bucket
+    frontendBucket.grantRead(originAccessIdentity);
+
+    // Response Headers Policy for security headers
+    const responseHeadersPolicy = new ResponseHeadersPolicy(this, 'FrontendSecurityHeaders', {
+      responseHeadersPolicyName: `${projectName}-security-headers-${env}`,
+      comment: 'Security headers for frontend application',
+      securityHeadersBehavior: {
+        contentTypeOptions: { override: true },
+        frameOptions: { frameOption: HeadersFrameOption.DENY, override: true },
+        referrerPolicy: { referrerPolicy: HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN, override: true },
+        strictTransportSecurity: { 
+          accessControlMaxAge: cdk.Duration.seconds(31536000),
+          includeSubdomains: true,
+          preload: true,
+          override: true
+        },
+        contentSecurityPolicy: {
+          contentSecurityPolicy: [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline'",
+            `connect-src 'self' ${api.url}`,
+            "img-src 'self' data: https:",
+            "font-src 'self'"
+          ].join('; '),
+          override: true
+        }
+      },
+      customHeadersBehavior: {
+        customHeaders: [
+          {
+            header: 'X-Content-Type-Options',
+            value: 'nosniff',
+            override: true
+          },
+          {
+            header: 'X-Frame-Options',
+            value: 'DENY',
+            override: true
+          }
+        ]
+      }
+    });
+
+    // CloudFront Distribution for frontend
+    const frontendDistributionConfig = envsConfig[env].frontendDistribution || {};
+    const frontendDistribution = new Distribution(this, 'FrontendDistribution', {
+      comment: `${projectName} frontend distribution for ${env}`,
+      defaultBehavior: {
+        origin: new S3Origin(frontendBucket, {
+          originAccessIdentity: originAccessIdentity
+        }),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+        cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
+        responseHeadersPolicy: responseHeadersPolicy,
+        compress: true
+      },
+      defaultRootObject: 'index.html',
+      errorResponses: [
+        {
+          httpStatus: 404,
+          responseHttpStatus: 404,
+          responsePagePath: '/404.html',
+          ttl: cdk.Duration.minutes(5)
+        },
+        {
+          httpStatus: 403,
+          responseHttpStatus: 404,
+          responsePagePath: '/404.html',
+          ttl: cdk.Duration.minutes(5)
+        },
+        {
+          httpStatus: 500,
+          responseHttpStatus: 500,
+          responsePagePath: '/error.html',
+          ttl: cdk.Duration.minutes(1)
+        },
+        {
+          httpStatus: 502,
+          responseHttpStatus: 500,
+          responsePagePath: '/error.html',
+          ttl: cdk.Duration.minutes(1)
+        },
+        {
+          httpStatus: 503,
+          responseHttpStatus: 500,
+          responsePagePath: '/error.html',
+          ttl: cdk.Duration.minutes(1)
+        },
+        {
+          httpStatus: 504,
+          responseHttpStatus: 500,
+          responsePagePath: '/error.html',
+          ttl: cdk.Duration.minutes(1)
+        }
+      ],
+      priceClass: frontendDistributionConfig.priceClass || undefined,
+      enabled: true
+    });
+
+    // Update API Gateway CORS to include the CloudFront domain
+    // Note: The actual domain will be available after deployment
+    // For now, we'll output the domain and update CORS manually or in a subsequent deployment
+
+    // Outputs for easy access to important values
+    new cdk.CfnOutput(this, 'FrontendBucketName', {
+      value: frontendBucket.bucketName,
+      description: 'Name of the S3 bucket hosting the frontend'
+    });
+
+    new cdk.CfnOutput(this, 'FrontendDistributionId', {
+      value: frontendDistribution.distributionId,
+      description: 'CloudFront distribution ID for the frontend'
+    });
+
+    new cdk.CfnOutput(this, 'FrontendDistributionDomain', {
+      value: frontendDistribution.distributionDomainName,
+      description: 'CloudFront distribution domain name for the frontend'
+    });
+
+    new cdk.CfnOutput(this, 'FrontendUrl', {
+      value: `https://${frontendDistribution.distributionDomainName}`,
+      description: 'Frontend application URL'
+    });
+
+    new cdk.CfnOutput(this, 'ApiUrl', {
+      value: api.url,
+      description: 'API Gateway URL for backend services'
+    });
+
+    new cdk.CfnOutput(this, 'ApiKeyId', {
+      value: apiKey.keyId,
+      description: 'API Key ID for accessing the backend API'
+    });
 
     // Lastly, add tags to resources
     Tags.of(this).add('project', projectName);

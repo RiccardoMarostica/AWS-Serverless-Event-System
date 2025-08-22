@@ -18,7 +18,8 @@ describe('ErrorDisplayComponent', () => {
     connectivitySubject = new BehaviorSubject<ConnectivityStatus>({
       isOnline: true,
       connectionType: 'wifi',
-      lastChecked: new Date()
+      lastChecked: new Date(),
+      latency: undefined
     });
 
     mockErrorHandler = jasmine.createSpyObj('ErrorHandlerService', ['clearError'], {
@@ -84,7 +85,8 @@ describe('ErrorDisplayComponent', () => {
     connectivitySubject.next({
       isOnline: false,
       connectionType: 'none',
-      lastChecked: new Date()
+      lastChecked: new Date(),
+      latency: undefined
     });
     fixture.detectChanges();
 

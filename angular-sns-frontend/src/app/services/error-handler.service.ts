@@ -1,6 +1,6 @@
 import { Injectable, ErrorHandler } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, fromEvent, merge, of } from 'rxjs';
+import { BehaviorSubject, fromEvent, merge } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 
 export enum ErrorType {

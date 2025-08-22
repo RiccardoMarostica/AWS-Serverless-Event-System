@@ -12,5 +12,8 @@ export const environment = {
     enableCSP: true,
     sanitizeInputs: true,
     validateApiKey: true
-  }
+  },
+  // Development-specific settings
+  enableDebugMode: true, // Enable debugging in development
+  logLevel: 'debug' // Verbose logging in development
 };

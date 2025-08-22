@@ -132,6 +132,13 @@
           "enforceSSL": false,
           "fifo": false,
           "contentBasedDeduplication": false
+        },
+        "frontendBucket": {
+          "versioned": false,
+          "enforceSSL": true
+        },
+        "frontendDistribution": {
+          "priceClass": "PriceClass_100"
         }
       },
       "qa": {

@@ -55,6 +55,32 @@
               "optimization": true,
               "sourceMap": false,
               "namedChunks": false,
+              "extractLicenses": true,
+              "tsConfig": "tsconfig.prod.json"
+            },
+            "staging": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "600kB",
+                  "maximumError": "1.2MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kB",
+                  "maximumError": "10kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.staging.ts"
+                }
+              ],
+              "optimization": true,
+              "sourceMap": true,
+              "namedChunks": true,
               "extractLicenses": true
             },
             "development": {
@@ -70,6 +96,9 @@
           "configurations": {
             "production": {
               "buildTarget": "angular-sns-frontend:build:production"
+            },
+            "staging": {
+              "buildTarget": "angular-sns-frontend:build:staging"
             },
             "development": {
               "buildTarget": "angular-sns-frontend:build:development"

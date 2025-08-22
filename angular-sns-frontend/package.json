@@ -6,12 +6,18 @@
     "start": "ng serve",
     "build": "ng build",
     "build:prod": "ng build --configuration production",
+    "build:analyze": "ng build --configuration production --stats-json && npx webpack-bundle-analyzer dist/angular-sns-frontend/browser/stats.json",
+    "build:stats": "ng build --configuration production --stats-json",
+    "build:staging": "ng build --configuration staging",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
     "lint": "ng lint",
-    "deploy:build": "npm run build:prod",
-    "serve:prod": "ng serve --configuration production"
+    "deploy:build": "npm run build:prod && npm run optimize:assets",
+    "serve:prod": "ng serve --configuration production",
+    "optimize:assets": "node scripts/optimize-assets.js",
+    "prebuild:prod": "npm run test:ci",
+    "postbuild:prod": "npm run build:stats"
   },
   "prettier": {
     "printWidth": 100,
@@ -45,12 +51,14 @@
     "@angular/cli": "^20.1.6",
     "@angular/compiler-cli": "^20.1.0",
     "@types/jasmine": "~5.1.0",
+    "@types/node": "^20.0.0",
     "jasmine-core": "~5.8.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "webpack-bundle-analyzer": "^4.10.1"
   }
 }

@@ -478,7 +478,7 @@ export class ErrorDisplayComponent implements OnInit, OnDestroy {
   private clearRetryTimer(): void {
     if (this.retryTimer) {
       clearInterval(this.retryTimer);
-      this.retryTimer = undefined;
+      this.retryTimer = undefined as any;
     }
     this.retryCountdown = 0;
     this.retryDisabled = false;

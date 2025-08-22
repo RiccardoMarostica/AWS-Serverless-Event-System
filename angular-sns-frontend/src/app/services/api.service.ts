@@ -3,12 +3,12 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Observable, throwError } from 'rxjs';
 import { catchError, timeout } from 'rxjs/operators';
 
-import { environment } from '../../environments/environment';
+
 import { 
   SubscriptionRequest, 
   SubscriptionResponse 
 } from '../models/subscription.model';
-import { Event, EventResponse } from '../models/event.model';
+import { Event } from '../models/event.model';
 import { ApiConfigUtil } from '../utils/api-config.util';
 import { SecurityService } from './security.service';
 import { SanitizationService } from './sanitization.service';
@@ -17,7 +17,7 @@ import { SanitizationService } from './sanitization.service';
   providedIn: 'root'
 })
 export class ApiService {
-  private readonly baseUrl = environment.apiUrl;
+  // private readonly baseUrl = environment.apiUrl;
   private readonly requestTimeout = 30000; // 30 seconds
 
   constructor(
@@ -91,15 +91,7 @@ export class ApiService {
     );
   }
 
-  /**
-   * Get HTTP headers for requests
-   * @returns HttpHeaders with required headers
-   */
-  private getHeaders(): HttpHeaders {
-    return new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-  }
+
 
   /**
    * Get secure HTTP headers for requests including security headers

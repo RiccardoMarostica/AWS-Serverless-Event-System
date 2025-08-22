@@ -273,7 +273,7 @@ export class ValidationService {
     }
   }
 
-  private getErrorSuggestions(errorType: string, errorData: any): string[] {
+  private getErrorSuggestions(errorType: string, _errorData: any): string[] {
     switch (errorType) {
       case 'required':
         return ['Enter your email address to receive notifications'];

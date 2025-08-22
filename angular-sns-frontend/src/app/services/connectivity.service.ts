@@ -7,7 +7,7 @@ export interface ConnectivityStatus {
   isOnline: boolean;
   connectionType: string;
   lastChecked: Date;
-  latency?: number;
+  latency: number | undefined;
 }
 
 @Injectable({
@@ -17,7 +17,8 @@ export class ConnectivityService {
   private connectivitySubject = new BehaviorSubject<ConnectivityStatus>({
     isOnline: navigator.onLine,
     connectionType: this.getConnectionType(),
-    lastChecked: new Date()
+    lastChecked: new Date(),
+    latency: undefined
   });
 
   public readonly connectivity$ = this.connectivitySubject.asObservable();
@@ -59,7 +60,7 @@ export class ConnectivityService {
       observe: 'response',
       responseType: 'text'
     }).pipe(
-      map(response => {
+      map(_response => {
         const latency = Date.now() - startTime;
         this.updateConnectivityStatus(true, latency);
         return true;

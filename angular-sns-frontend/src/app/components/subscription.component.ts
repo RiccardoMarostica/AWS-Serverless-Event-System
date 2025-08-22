@@ -7,7 +7,7 @@ import { ValidationService } from '../services/validation.service';
 import { ApiService } from '../services/api.service';
 import { LoadingService } from '../services/loading.service';
 import { ErrorHandlerService } from '../services/error-handler.service';
-import { ConnectivityService } from '../services/connectivity.service';
+
 import { SanitizationService } from '../services/sanitization.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { ErrorDisplayComponent } from './error-display.component';
@@ -688,7 +688,7 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private loadingService: LoadingService,
     private errorHandler: ErrorHandlerService,
-    private connectivity: ConnectivityService,
+
     private sanitizationService: SanitizationService
   ) {}
 
