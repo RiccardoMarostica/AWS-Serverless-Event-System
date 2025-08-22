@@ -76,50 +76,10 @@ export class ApiService {
    * @returns Observable error
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An unexpected error occurred';
-
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Network error: ${error.error.message}`;
-    } else {
-      // Server-side error
-      switch (error.status) {
-        case 400:
-          errorMessage = 'Invalid request. Please check your email address.';
-          break;
-        case 401:
-          errorMessage = 'Unauthorized. Please try again later.';
-          break;
-        case 403:
-          errorMessage = 'Access forbidden. Please contact support.';
-          break;
-        case 404:
-          errorMessage = 'Service not found. Please try again later.';
-          break;
-        case 429:
-          errorMessage = 'Too many requests. Please wait and try again.';
-          break;
-        case 500:
-          errorMessage = 'Server error. Please try again later.';
-          break;
-        case 0:
-          errorMessage = 'Network connection failed. Please check your internet connection.';
-          break;
-        default:
-          errorMessage = `Server error (${error.status}): ${error.message}`;
-      }
-
-      // Try to extract error message from response body
-      if (error.error && typeof error.error === 'object') {
-        if (error.error.message) {
-          errorMessage = error.error.message;
-        } else if (error.error.error) {
-          errorMessage = error.error.error;
-        }
-      }
-    }
-
+    // Let the global error handler categorize and handle the error
     console.error('API Error:', error);
-    return throwError(() => new Error(errorMessage));
+    
+    // Return the original error to maintain error details
+    return throwError(() => error);
   }
 }

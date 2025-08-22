@@ -54,7 +54,9 @@ describe('ApiService', () => {
       service.subscribe(email).subscribe({
         next: () => fail('should have failed with 400 error'),
         error: (error) => {
-          expect(error.message).toBe('Invalid email format');
+          expect(error).toBeInstanceOf(HttpErrorResponse);
+          expect(error.status).toBe(400);
+          expect(error.error.error).toBe('Invalid email format');
         }
       });
 
@@ -68,7 +70,8 @@ describe('ApiService', () => {
       service.subscribe(email).subscribe({
         next: () => fail('should have failed with 400 error'),
         error: (error) => {
-          expect(error.message).toBe('Invalid request. Please check your email address.');
+          expect(error).toBeInstanceOf(HttpErrorResponse);
+          expect(error.status).toBe(400);
         }
       });
 
@@ -82,7 +85,8 @@ describe('ApiService', () => {
       service.subscribe(email).subscribe({
         next: () => fail('should have failed with network error'),
         error: (error) => {
-          expect(error.message).toContain('Network error');
+          expect(error).toBeInstanceOf(HttpErrorResponse);
+          expect(error.status).toBe(0);
         }
       });
 
@@ -98,7 +102,8 @@ describe('ApiService', () => {
       service.subscribe(email).subscribe({
         next: () => fail('should have failed with server error'),
         error: (error) => {
-          expect(error.message).toBe('Server error. Please try again later.');
+          expect(error).toBeInstanceOf(HttpErrorResponse);
+          expect(error.status).toBe(500);
         }
       });
 
@@ -134,7 +139,8 @@ describe('ApiService', () => {
       service.getEvents().subscribe({
         next: () => fail('should have failed with error'),
         error: (error) => {
-          expect(error.message).toBe('Service not found. Please try again later.');
+          expect(error).toBeInstanceOf(HttpErrorResponse);
+          expect(error.status).toBe(404);
         }
       });
 

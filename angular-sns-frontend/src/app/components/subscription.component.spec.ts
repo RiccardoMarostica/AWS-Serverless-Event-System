@@ -1,11 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of, throwError, Subject } from 'rxjs';
 
 import { SubscriptionComponent } from './subscription.component';
 import { ValidationService } from '../services/validation.service';
 import { ApiService } from '../services/api.service';
 import { LoadingService } from '../services/loading.service';
+import { ErrorHandlerService } from '../services/error-handler.service';
+import { ConnectivityService } from '../services/connectivity.service';
 import { SubscriptionStatus } from '../models/subscription.model';
 
 describe('SubscriptionComponent', () => {
@@ -14,21 +17,29 @@ describe('SubscriptionComponent', () => {
     let mockValidationService: jasmine.SpyObj<ValidationService>;
     let mockApiService: jasmine.SpyObj<ApiService>;
     let mockLoadingService: jasmine.SpyObj<LoadingService>;
+    let mockErrorHandler: jasmine.SpyObj<ErrorHandlerService>;
+    let mockConnectivity: jasmine.SpyObj<ConnectivityService>;
 
     beforeEach(async () => {
         const validationServiceSpy = jasmine.createSpyObj('ValidationService', [
             'getEmailValidators',
-            'getErrorMessage'
+            'getErrorMessage',
+            'getFieldErrorInfo',
+            'validateEmailWithSuggestions'
         ]);
         const apiServiceSpy = jasmine.createSpyObj('ApiService', ['subscribe']);
         const loadingServiceSpy = jasmine.createSpyObj('LoadingService', ['setLoading']);
+        const errorHandlerSpy = jasmine.createSpyObj('ErrorHandlerService', ['handleError', 'clearError']);
+        const connectivitySpy = jasmine.createSpyObj('ConnectivityService', ['getCurrentStatus']);
 
         await TestBed.configureTestingModule({
-            imports: [SubscriptionComponent, ReactiveFormsModule],
+            imports: [SubscriptionComponent, ReactiveFormsModule, HttpClientTestingModule],
             providers: [
                 { provide: ValidationService, useValue: validationServiceSpy },
                 { provide: ApiService, useValue: apiServiceSpy },
-                { provide: LoadingService, useValue: loadingServiceSpy }
+                { provide: LoadingService, useValue: loadingServiceSpy },
+                { provide: ErrorHandlerService, useValue: errorHandlerSpy },
+                { provide: ConnectivityService, useValue: connectivitySpy }
             ]
         }).compileComponents();
 
@@ -37,10 +48,25 @@ describe('SubscriptionComponent', () => {
         mockValidationService = TestBed.inject(ValidationService) as jasmine.SpyObj<ValidationService>;
         mockApiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
         mockLoadingService = TestBed.inject(LoadingService) as jasmine.SpyObj<LoadingService>;
+        mockErrorHandler = TestBed.inject(ErrorHandlerService) as jasmine.SpyObj<ErrorHandlerService>;
+        mockConnectivity = TestBed.inject(ConnectivityService) as jasmine.SpyObj<ConnectivityService>;
 
         // Setup default mock returns
         mockValidationService.getEmailValidators.and.returnValue([]);
         mockValidationService.getErrorMessage.and.returnValue('Invalid email');
+        mockValidationService.getFieldErrorInfo.and.returnValue({
+            hasError: false,
+            errorType: '',
+            message: '',
+            severity: 'error' as const,
+            suggestions: []
+        });
+        mockValidationService.validateEmailWithSuggestions.and.returnValue({
+            isValid: true,
+            errors: [],
+            suggestions: [],
+            severity: 'info' as const
+        });
     });
 
     it('should create', () => {

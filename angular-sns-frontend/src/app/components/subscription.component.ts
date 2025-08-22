@@ -6,15 +6,30 @@ import { Subject, takeUntil, timer } from 'rxjs';
 import { ValidationService } from '../services/validation.service';
 import { ApiService } from '../services/api.service';
 import { LoadingService } from '../services/loading.service';
+import { ErrorHandlerService } from '../services/error-handler.service';
+import { ConnectivityService } from '../services/connectivity.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
+import { ErrorDisplayComponent } from './error-display.component';
 import { SubscriptionStatus, SubscriptionState } from '../models/subscription.model';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LoadingIndicatorComponent],
+  imports: [CommonModule, ReactiveFormsModule, LoadingIndicatorComponent, ErrorDisplayComponent],
   template: `
     <div class="subscription-container" id="subscribe">
+      <!-- Global Error Display -->
+      <app-error-display
+        [showActions]="true"
+        [showConnectivityStatus]="true"
+        [showDebugInfo]="false"
+        [autoRetry]="true"
+        [retryDelay]="3"
+        (retry)="onGlobalRetry()"
+        (dismiss)="onErrorDismiss()"
+        (getHelp)="onGetHelp()">
+      </app-error-display>
+
       <!-- Page header -->
       <div class="page-header">
         <h2 class="page-title">
@@ -80,13 +95,36 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
               role="alert"
               aria-live="polite"
             >
-              <span class="error-message">
-                <span class="error-icon">⚠</span>
-                {{ getFieldErrorMessage('email') }}
-              </span>
+              <div class="error-message" [class.error-warning]="fieldErrorInfo.severity === 'warning'">
+                <span class="error-icon">{{ fieldErrorInfo.severity === 'warning' ? '⚠' : '⚠' }}</span>
+                <div class="error-content">
+                  <span class="error-text">{{ fieldErrorInfo.message }}</span>
+                  <div class="error-suggestions" *ngIf="fieldErrorInfo.suggestions && fieldErrorInfo.suggestions.length > 0">
+                    <ul class="suggestions-list">
+                      <li *ngFor="let suggestion of fieldErrorInfo.suggestions" class="suggestion-item">
+                        {{ suggestion }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div class="field-hint" *ngIf="!isFieldInvalid('email')">
+            <!-- Real-time validation feedback -->
+            <div class="field-feedback" *ngIf="subscriptionForm.get('email')?.value && !isFieldInvalid('email')">
+              <div class="validation-feedback" *ngIf="emailValidationInfo.suggestions.length > 0">
+                <div class="feedback-content" [class.feedback-warning]="emailValidationInfo.severity === 'warning'">
+                  <span class="feedback-icon">{{ emailValidationInfo.severity === 'warning' ? '💡' : 'ℹ️' }}</span>
+                  <div class="feedback-text">
+                    <div *ngFor="let suggestion of emailValidationInfo.suggestions" class="suggestion">
+                      {{ suggestion }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-hint" *ngIf="!isFieldInvalid('email') && emailValidationInfo.suggestions.length === 0">
               We'll send you a confirmation email to verify your subscription.
             </div>
           </div>
@@ -351,7 +389,7 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
 
     .error-message {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: var(--spacing-sm);
       color: var(--secondary-color);
       font-size: var(--font-size-sm);
@@ -360,6 +398,80 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
       background-color: #fef2f2;
       border: 1px solid #fecaca;
       border-radius: var(--border-radius-md);
+    }
+
+    .error-message.error-warning {
+      color: #92400e;
+      background-color: #fffbeb;
+      border-color: #fcd34d;
+    }
+
+    .error-content {
+      flex: 1;
+    }
+
+    .error-text {
+      display: block;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .error-suggestions {
+      margin-top: var(--spacing-xs);
+    }
+
+    .suggestions-list {
+      margin: 0;
+      padding-left: var(--spacing-md);
+      list-style-type: disc;
+    }
+
+    .suggestion-item {
+      font-size: var(--font-size-xs);
+      color: rgba(153, 27, 27, 0.8);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .error-message.error-warning .suggestion-item {
+      color: rgba(146, 64, 14, 0.8);
+    }
+
+    .field-feedback {
+      margin-top: var(--spacing-md);
+    }
+
+    .validation-feedback {
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .feedback-content {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background-color: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: var(--border-radius-md);
+      font-size: var(--font-size-sm);
+      color: #0369a1;
+    }
+
+    .feedback-content.feedback-warning {
+      background-color: #fffbeb;
+      border-color: #fcd34d;
+      color: #92400e;
+    }
+
+    .feedback-icon {
+      flex-shrink: 0;
+      font-size: var(--font-size-base);
+    }
+
+    .feedback-text {
+      flex: 1;
+    }
+
+    .suggestion {
+      margin-bottom: var(--spacing-xs);
     }
 
     .field-hint {
@@ -556,6 +668,10 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     status: SubscriptionStatus.IDLE
   };
 
+  // Enhanced error handling
+  fieldErrorInfo: any = { hasError: false, errorType: '', message: '', severity: 'error', suggestions: [] };
+  emailValidationInfo: any = { isValid: true, errors: [], suggestions: [], severity: 'info' };
+
   // Retry functionality
   retryAttempts = 0;
   maxRetryAttempts = 3;
@@ -569,7 +685,9 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private validationService: ValidationService,
     private apiService: ApiService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private errorHandler: ErrorHandlerService,
+    private connectivity: ConnectivityService
   ) {}
 
   ngOnInit(): void {
@@ -593,11 +711,14 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     // Subscribe to form value changes for real-time validation feedback
     this.subscriptionForm.get('email')?.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+      .subscribe((email) => {
         // Reset error state when user starts typing after an error
         if (this.subscriptionState.status === SubscriptionStatus.ERROR) {
           this.subscriptionState = { status: SubscriptionStatus.IDLE };
         }
+
+        // Update real-time validation feedback
+        this.updateValidationFeedback(email);
       });
   }
 
@@ -630,6 +751,8 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
         error: (error) => {
           this.loadingService.setLoading(false);
           this.handleSubscriptionError(error);
+          // Also let the global error handler process the error
+          this.errorHandler.handleError(error);
         }
       });
   }
@@ -655,9 +778,52 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
   getFieldErrorMessage(fieldName: string): string {
     const field = this.subscriptionForm.get(fieldName);
     if (field && field.errors) {
-      return this.validationService.getErrorMessage(field.errors);
+      this.fieldErrorInfo = this.validationService.getFieldErrorInfo(field.errors);
+      return this.fieldErrorInfo.message;
     }
     return '';
+  }
+
+  onGlobalRetry(): void {
+    if (this.lastSubmittedEmail) {
+      this.submitSubscription(this.lastSubmittedEmail);
+    }
+  }
+
+  onErrorDismiss(): void {
+    this.errorHandler.clearError();
+  }
+
+  onGetHelp(): void {
+    // In a real application, this could open a help modal or redirect to support
+    const helpMessage = `
+      If you're experiencing issues with subscription:
+      
+      1. Check your internet connection
+      2. Verify your email address is correct
+      3. Try again in a few minutes
+      4. Contact support if the problem persists
+      
+      Error details have been logged for troubleshooting.
+    `;
+    
+    alert(helpMessage);
+  }
+
+  private updateValidationFeedback(email: string): void {
+    if (email) {
+      this.emailValidationInfo = this.validationService.validateEmailWithSuggestions(email);
+    } else {
+      this.emailValidationInfo = { isValid: true, errors: [], suggestions: [], severity: 'info' };
+    }
+
+    // Update field error info for current validation state
+    const field = this.subscriptionForm.get('email');
+    if (field && field.errors) {
+      this.fieldErrorInfo = this.validationService.getFieldErrorInfo(field.errors);
+    } else {
+      this.fieldErrorInfo = { hasError: false, errorType: '', message: '', severity: 'error', suggestions: [] };
+    }
   }
 
   private markFormGroupTouched(): void {
