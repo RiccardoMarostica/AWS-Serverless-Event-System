@@ -5,5 +5,12 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000/dev', // Local development API
-  apiKey: 'dev-api-key' // Development API key
+  apiKey: 'dev-api-key', // Development API key
+  // Security configuration
+  security: {
+    enforceHttps: false, // Allow HTTP in development
+    enableCSP: true,
+    sanitizeInputs: true,
+    validateApiKey: true
+  }
 };

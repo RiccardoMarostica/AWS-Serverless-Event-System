@@ -1,11 +1,14 @@
 import { Injectable } from '@angular/core';
 import { AbstractControl, ValidatorFn, ValidationErrors } from '@angular/forms';
 import { ValidationResult } from '../models/subscription.model';
+import { SanitizationService } from './sanitization.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ValidationService {
+
+  constructor(private sanitizationService: SanitizationService) {}
 
   /**
    * Validates email format and provides detailed feedback
@@ -40,7 +43,8 @@ export class ValidationService {
   getEmailValidators(): ValidatorFn[] {
     return [
       this.customEmailValidator(),
-      this.emailLengthValidator()
+      this.emailLengthValidator(),
+      this.xssProtectionValidator()
     ];
   }
 
@@ -92,6 +96,29 @@ export class ValidationService {
   }
 
   /**
+   * XSS protection validator
+   */
+  private xssProtectionValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) {
+        return null;
+      }
+
+      // Check for potentially malicious input
+      if (!this.sanitizationService.validateInputSafety(control.value)) {
+        return {
+          xssDetected: {
+            message: 'Invalid characters detected. Please enter a valid email address.',
+            value: control.value
+          }
+        };
+      }
+
+      return null;
+    };
+  }
+
+  /**
    * Gets user-friendly error message from validation errors
    */
   getErrorMessage(errors: ValidationErrors | null): string {
@@ -100,7 +127,7 @@ export class ValidationService {
     }
 
     // Priority order for multiple errors
-    const errorPriority = ['required', 'invalidEmail', 'emailTooLong', 'email'];
+    const errorPriority = ['required', 'xssDetected', 'invalidEmail', 'emailTooLong', 'email'];
     
     for (const errorType of errorPriority) {
       if (errors[errorType]) {
@@ -227,6 +254,8 @@ export class ValidationService {
         return errorData?.message || 'Please enter a valid email address';
       case 'emailTooLong':
         return errorData?.message || 'Email address is too long';
+      case 'xssDetected':
+        return errorData?.message || 'Invalid characters detected. Please enter a valid email address.';
       default:
         return 'Please enter a valid email address';
     }
@@ -237,6 +266,7 @@ export class ValidationService {
       case 'required':
       case 'invalidEmail':
       case 'emailTooLong':
+      case 'xssDetected':
         return 'error';
       default:
         return 'error';
@@ -254,6 +284,11 @@ export class ValidationService {
         ];
       case 'emailTooLong':
         return ['Try using a shorter email address'];
+      case 'xssDetected':
+        return [
+          'Remove any special characters or HTML tags',
+          'Use only letters, numbers, @, dots, hyphens, and plus signs'
+        ];
       default:
         return [];
     }

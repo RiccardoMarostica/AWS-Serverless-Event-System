@@ -8,6 +8,7 @@ import { ApiService } from '../services/api.service';
 import { LoadingService } from '../services/loading.service';
 import { ErrorHandlerService } from '../services/error-handler.service';
 import { ConnectivityService } from '../services/connectivity.service';
+import { SanitizationService } from '../services/sanitization.service';
 import { LoadingIndicatorComponent } from './loading-indicator.component';
 import { ErrorDisplayComponent } from './error-display.component';
 import { SubscriptionStatus, SubscriptionState } from '../models/subscription.model';
@@ -687,7 +688,8 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private loadingService: LoadingService,
     private errorHandler: ErrorHandlerService,
-    private connectivity: ConnectivityService
+    private connectivity: ConnectivityService,
+    private sanitizationService: SanitizationService
   ) {}
 
   ngOnInit(): void {
@@ -724,8 +726,21 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     if (this.subscriptionForm.valid) {
-      const email = this.subscriptionForm.get('email')?.value;
-      this.submitSubscription(email);
+      const rawEmail = this.subscriptionForm.get('email')?.value;
+      
+      // Sanitize input before processing
+      const sanitizedEmail = this.sanitizationService.sanitizeEmail(rawEmail);
+      
+      // Validate that the sanitized input is safe
+      if (!this.sanitizationService.validateInputSafety(sanitizedEmail)) {
+        this.subscriptionState = {
+          status: SubscriptionStatus.ERROR,
+          error: 'Invalid input detected. Please enter a valid email address.'
+        };
+        return;
+      }
+      
+      this.submitSubscription(sanitizedEmail);
     } else {
       this.markFormGroupTouched();
     }

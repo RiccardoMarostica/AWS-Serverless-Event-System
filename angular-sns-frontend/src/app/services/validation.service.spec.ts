@@ -45,7 +45,7 @@ describe('ValidationService', () => {
     it('should return array of validators', () => {
       const validators = service.getEmailValidators();
       expect(validators).toBeInstanceOf(Array);
-      expect(validators.length).toBe(2);
+      expect(validators.length).toBe(3); // Now includes XSS protection validator
     });
 
     it('should validate correct email with custom validators', () => {

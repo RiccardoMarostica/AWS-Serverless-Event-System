@@ -1,5 +1,14 @@
 export const environment = {
   production: true,
   apiUrl: 'https://your-api-gateway-url.amazonaws.com/dev', // Production API Gateway URL
-  apiKey: 'your-production-api-key' // Production API key - should be set via build process
+  // API key should be replaced during build process
+  // Use build-time replacement or environment-specific configuration
+  apiKey: 'REPLACE_WITH_ACTUAL_API_KEY',
+  // Security configuration
+  security: {
+    enforceHttps: true, // Enforce HTTPS in production
+    enableCSP: true,
+    sanitizeInputs: true,
+    validateApiKey: true
+  }
 };
