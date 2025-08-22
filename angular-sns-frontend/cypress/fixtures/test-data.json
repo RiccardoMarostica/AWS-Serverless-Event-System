@@ -1,0 +1,66 @@
+{
+  "validEmails": [
+    "test@example.com",
+    "user.name@domain.co.uk",
+    "test+tag@example.org",
+    "firstname.lastname@company.com",
+    "user123@test-domain.net"
+  ],
+  "invalidEmails": [
+    "invalid-email",
+    "test@",
+    "@example.com",
+    "test..test@example.com",
+    "test@example",
+    "test@.com",
+    "test@example.",
+    "test space@example.com",
+    "test@ex ample.com"
+  ],
+  "maliciousInputs": [
+    "<script>alert('xss')</script>@example.com",
+    "test@example.com<img src=x onerror=alert(1)>",
+    "javascript:alert('xss')@example.com",
+    "test@example.com'; DROP TABLE users; --",
+    "test@example.com<svg onload=alert('xss')>"
+  ],
+  "apiResponses": {
+    "success": {
+      "statusCode": 200,
+      "body": { "message": "Subscription requested. Please check your email to confirm." }
+    },
+    "serverError": {
+      "statusCode": 500,
+      "body": { "error": "Internal server error" }
+    },
+    "validationError": {
+      "statusCode": 400,
+      "body": { "error": "Invalid email format" }
+    },
+    "duplicateError": {
+      "statusCode": 409,
+      "body": { "error": "Email address is already subscribed to this topic." }
+    },
+    "rateLimitError": {
+      "statusCode": 429,
+      "body": { "error": "Too many requests. Please try again later." }
+    },
+    "unauthorizedError": {
+      "statusCode": 401,
+      "body": { "error": "Unauthorized: Missing API key" }
+    }
+  },
+  "viewports": [
+    { "name": "Mobile Portrait", "width": 375, "height": 667 },
+    { "name": "Mobile Landscape", "width": 667, "height": 375 },
+    { "name": "Tablet Portrait", "width": 768, "height": 1024 },
+    { "name": "Tablet Landscape", "width": 1024, "height": 768 },
+    { "name": "Desktop Small", "width": 1280, "height": 720 },
+    { "name": "Desktop Large", "width": 1920, "height": 1080 }
+  ],
+  "networkConditions": {
+    "slow": { "delay": 3000 },
+    "timeout": { "delay": 15000, "statusCode": 408 },
+    "offline": { "forceNetworkError": true }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "project": {
+    "name": "serverless-event-system",
+    "description": "Angular SNS Frontend Deployment Configuration"
+  },
+  "environments": {
+    "dev": {
+      "name": "development",
+      "region": "us-east-1",
+      "stackName": "InfrastructureStack",
+      "bucketPrefix": "serverless-event-system-frontend-dev",
+      "buildCommand": "build",
+      "skipTests": false,
+      "cacheInvalidation": true,
+      "compressionEnabled": true,
+      "securityHeaders": true,
+      "monitoring": false
+    },
+    "staging": {
+      "name": "staging",
+      "region": "us-east-1",
+      "stackName": "InfrastructureStack",
+      "bucketPrefix": "serverless-event-system-frontend-staging",
+      "buildCommand": "build:staging",
+      "skipTests": false,
+      "cacheInvalidation": true,
+      "compressionEnabled": true,
+      "securityHeaders": true,
+      "monitoring": true,
+      "testAfterDeploy": true
+    },
+    "production": {
+      "name": "production",
+      "region": "us-east-1",
+      "stackName": "InfrastructureStack",
+      "bucketPrefix": "serverless-event-system-frontend-production",
+      "buildCommand": "build:prod",
+      "skipTests": false,
+      "cacheInvalidation": true,
+      "compressionEnabled": true,
+      "securityHeaders": true,
+      "monitoring": true,
+      "testAfterDeploy": true,
+      "requireApproval": true
+    }
+  },
+  "s3": {
+    "syncOptions": {
+      "delete": true,
+      "exactTimestamps": false,
+      "followSymlinks": false
+    },
+    "cacheControl": {
+      "html": "public, max-age=0, must-revalidate",
+      "assets": "public, max-age=31536000, immutable",
+      "json": "public, max-age=300",
+      "errorPages": "public, max-age=60"
+    },
+    "contentTypes": {
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "application/javascript",
+      ".json": "application/json",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".svg": "image/svg+xml",
+      ".ico": "image/x-icon",
+      ".woff": "font/woff",
+      ".woff2": "font/woff2",
+      ".ttf": "font/ttf",
+      ".eot": "application/vnd.ms-fontobject"
+    }
+  },
+  "cloudfront": {
+    "invalidationPaths": ["/*"],
+    "waitForCompletion": {
+      "dev": false,
+      "staging": false,
+      "production": true
+    }
+  },
+  "testing": {
+    "endpoints": {
+      "health": "/",
+      "notFound": "/nonexistent-page"
+    },
+    "expectedContent": [
+      "angular-sns-frontend",
+      "subscription",
+      "email"
+    ],
+    "securityHeaders": [
+      "X-Content-Type-Options",
+      "X-Frame-Options",
+      "Strict-Transport-Security",
+      "Content-Security-Policy"
+    ],
+    "performance": {
+      "maxResponseTime": 3.0,
+      "compressionRequired": true
+    }
+  },
+  "notifications": {
+    "slack": {
+      "enabled": false,
+      "webhook": "",
+      "channel": "#deployments"
+    },
+    "email": {
+      "enabled": false,
+      "recipients": []
+    }
+  }
+}
