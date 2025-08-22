@@ -49,6 +49,7 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
           [formGroup]="subscriptionForm" 
           (ngSubmit)="onSubmit()" 
           class="subscription-form"
+          data-cy="subscription-form"
           novalidate
         >
           <div class="form-group">
