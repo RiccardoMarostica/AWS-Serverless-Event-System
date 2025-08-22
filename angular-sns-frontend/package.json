@@ -29,7 +29,12 @@
     "serve:prod": "ng serve --configuration production",
     "optimize:assets": "node scripts/optimize-assets.js",
     "prebuild:prod": "npm run test:ci",
-    "postbuild:prod": "npm run build:stats"
+    "postbuild:prod": "npm run build:stats",
+    "test:performance": "node scripts/performance-test.js",
+    "test:security": "node scripts/security-verification.js",
+    "test:integration": "node scripts/integration-test.js",
+    "test:production": "cypress run --spec 'cypress/e2e/production-integration.cy.ts'",
+    "test:all": "npm run test:ci && npm run test:performance && npm run test:security && npm run test:integration"
   },
   "prettier": {
     "printWidth": 100,
