@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://staging-api-gateway-url.amazonaws.com/dev', // Staging API Gateway URL
-  apiKey: 'REPLACE_WITH_STAGING_API_KEY',
+  apiUrl: 'https://p4nr9e8w96.execute-api.eu-west-1.amazonaws.com/dev', // Staging API Gateway URL
+  apiKey: 'nXRGCkU1OT6gsnELBxYStWK3QgHagZa8L6VaidSg',
   // Security configuration
   security: {
     enforceHttps: true, // Enforce HTTPS in staging
