@@ -14,80 +14,207 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LoadingIndicatorComponent],
   template: `
-    <div class="subscription-container">
-      <h2>Subscribe to Event Notifications</h2>
-      <p class="description">Enter your email address to receive notifications about upcoming events.</p>
+    <div class="subscription-container" id="subscribe">
+      <!-- Page header -->
+      <div class="page-header">
+        <h2 class="page-title">
+          <span class="title-icon">📧</span>
+          Subscribe to Event Notifications
+        </h2>
+        <p class="page-description">
+          Enter your email address to receive notifications about upcoming events. 
+          Stay informed and never miss an important update.
+        </p>
+      </div>
       
-      <form [formGroup]="subscriptionForm" (ngSubmit)="onSubmit()" class="subscription-form">
-        <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
-          <input
-            id="email"
-            type="email"
-            formControlName="email"
-            class="form-input"
-            [class.error]="isFieldInvalid('email')"
-            placeholder="Enter your email address"
-            autocomplete="email"
-          />
-          
-          <div class="error-messages" *ngIf="isFieldInvalid('email')">
-            <span class="error-message">{{ getFieldErrorMessage('email') }}</span>
+      <!-- Subscription form -->
+      <div class="form-container" [class.form-loading]="subscriptionState.status === 'loading'">
+        <form 
+          [formGroup]="subscriptionForm" 
+          (ngSubmit)="onSubmit()" 
+          class="subscription-form"
+          novalidate
+        >
+          <div class="form-group">
+            <label for="email" class="form-label">
+              <span class="label-text">Email Address</span>
+              <span class="label-required" aria-label="required">*</span>
+            </label>
+            
+            <div class="input-wrapper">
+              <div class="input-icon">
+                <span class="icon">✉️</span>
+              </div>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                class="form-input"
+                [class.input-error]="isFieldInvalid('email')"
+                [class.input-success]="subscriptionForm.get('email')?.valid && subscriptionForm.get('email')?.touched"
+                placeholder="your.email@example.com"
+                autocomplete="email"
+                autocapitalize="none"
+                spellcheck="false"
+                [attr.aria-describedby]="isFieldInvalid('email') ? 'email-error' : null"
+                [attr.aria-invalid]="isFieldInvalid('email')"
+              />
+              <div class="input-status" *ngIf="subscriptionForm.get('email')?.touched">
+                <span 
+                  class="status-icon success" 
+                  *ngIf="subscriptionForm.get('email')?.valid"
+                  aria-label="Valid email"
+                >✓</span>
+                <span 
+                  class="status-icon error" 
+                  *ngIf="isFieldInvalid('email')"
+                  aria-label="Invalid email"
+                >⚠</span>
+              </div>
+            </div>
+            
+            <div 
+              class="error-messages" 
+              *ngIf="isFieldInvalid('email')"
+              id="email-error"
+              role="alert"
+              aria-live="polite"
+            >
+              <span class="error-message">
+                <span class="error-icon">⚠</span>
+                {{ getFieldErrorMessage('email') }}
+              </span>
+            </div>
+            
+            <div class="field-hint" *ngIf="!isFieldInvalid('email')">
+              We'll send you a confirmation email to verify your subscription.
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="submit-button"
+            [disabled]="subscriptionForm.invalid || subscriptionState.status === 'loading'"
+            [class.button-loading]="subscriptionState.status === 'loading'"
+            [attr.aria-describedby]="subscriptionState.status === 'loading' ? 'loading-text' : null"
+          >
+            <span *ngIf="subscriptionState.status !== 'loading'" class="button-content">
+              <span class="button-icon">📧</span>
+              Subscribe Now
+            </span>
+            <span 
+              *ngIf="subscriptionState.status === 'loading'" 
+              class="loading-content"
+              id="loading-text"
+            >
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="loading-text">Subscribing...</span>
+            </span>
+          </button>
+        </form>
+
+        <!-- Form features -->
+        <div class="form-features">
+          <div class="feature">
+            <span class="feature-icon">🔒</span>
+            <span class="feature-text">Your email is secure and private</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">📱</span>
+            <span class="feature-text">Mobile-friendly notifications</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">🚫</span>
+            <span class="feature-text">Unsubscribe anytime</span>
           </div>
         </div>
-
-        <button 
-          type="submit" 
-          class="submit-button"
-          [disabled]="subscriptionForm.invalid || subscriptionState.status === 'loading'"
-          [class.loading]="subscriptionState.status === 'loading'"
-        >
-          <span *ngIf="subscriptionState.status !== 'loading'">Subscribe</span>
-          <span *ngIf="subscriptionState.status === 'loading'" class="loading-text">
-            <span class="spinner"></span>
-            Subscribing...
-          </span>
-        </button>
-      </form>
+      </div>
 
       <!-- Loading Indicator -->
-      <app-loading-indicator 
-        *ngIf="subscriptionState.status === 'loading'"
-        [show]="true"
-        text="Processing your subscription..."
-        size="large">
-      </app-loading-indicator>
+      <div 
+        *ngIf="subscriptionState.status === 'loading'" 
+        class="loading-overlay"
+        role="status"
+        aria-live="polite"
+        aria-label="Processing subscription"
+      >
+        <app-loading-indicator 
+          [show]="true"
+          text="Processing your subscription..."
+          size="large">
+        </app-loading-indicator>
+      </div>
 
       <!-- Success Message -->
-      <div *ngIf="subscriptionState.status === 'success'" class="success-message">
-        <div class="success-icon">✓</div>
-        <h3>Subscription Successful!</h3>
-        <p>{{ subscriptionState.message || 'Please check your email to confirm your subscription.' }}</p>
-        <button type="button" class="success-button" (click)="onNewSubscription()">
-          Subscribe Another Email
-        </button>
+      <div 
+        *ngIf="subscriptionState.status === 'success'" 
+        class="status-message success-message"
+        role="alert"
+        aria-live="polite"
+      >
+        <div class="status-icon-large success">
+          <span class="icon-bg"></span>
+          <span class="icon">✓</span>
+        </div>
+        <div class="status-content">
+          <h3 class="status-title">Subscription Successful!</h3>
+          <p class="status-description">
+            {{ subscriptionState.message || 'Please check your email to confirm your subscription. You should receive a confirmation email within the next few minutes.' }}
+          </p>
+          <div class="status-actions">
+            <button 
+              type="button" 
+              class="action-button primary" 
+              (click)="onNewSubscription()"
+            >
+              <span class="button-icon">➕</span>
+              Subscribe Another Email
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Error Message -->
-      <div *ngIf="subscriptionState.status === 'error'" class="error-message-container">
-        <div class="error-icon">⚠</div>
-        <h3>Subscription Failed</h3>
-        <p>{{ subscriptionState.error || 'An error occurred while processing your subscription. Please try again.' }}</p>
-        
-        <!-- Retry with countdown -->
-        <div class="retry-section">
-          <button 
-            type="button" 
-            class="retry-button" 
-            (click)="onRetry()"
-            [disabled]="retryCountdown > 0"
-          >
-            <span *ngIf="retryCountdown === 0">Try Again</span>
-            <span *ngIf="retryCountdown > 0">Retry in {{ retryCountdown }}s</span>
-          </button>
+      <div 
+        *ngIf="subscriptionState.status === 'error'" 
+        class="status-message error-message"
+        role="alert"
+        aria-live="polite"
+      >
+        <div class="status-icon-large error">
+          <span class="icon-bg"></span>
+          <span class="icon">⚠</span>
+        </div>
+        <div class="status-content">
+          <h3 class="status-title">Subscription Failed</h3>
+          <p class="status-description">
+            {{ subscriptionState.error || 'An error occurred while processing your subscription. Please check your internet connection and try again.' }}
+          </p>
           
-          <div class="retry-info" *ngIf="retryAttempts > 0">
-            <small>Attempt {{ retryAttempts + 1 }} of {{ maxRetryAttempts }}</small>
+          <!-- Retry with countdown -->
+          <div class="status-actions">
+            <button 
+              type="button" 
+              class="action-button secondary" 
+              (click)="onRetry()"
+              [disabled]="retryCountdown > 0"
+              [attr.aria-describedby]="retryCountdown > 0 ? 'retry-countdown' : null"
+            >
+              <span *ngIf="retryCountdown === 0" class="button-content">
+                <span class="button-icon">🔄</span>
+                Try Again
+              </span>
+              <span *ngIf="retryCountdown > 0" class="button-content" id="retry-countdown">
+                <span class="button-icon">⏱️</span>
+                Retry in {{ retryCountdown }}s
+              </span>
+            </button>
+            
+            <div class="retry-info" *ngIf="retryAttempts > 0">
+              <small class="retry-text">
+                Attempt {{ retryAttempts + 1 }} of {{ maxRetryAttempts }}
+              </small>
+            </div>
           </div>
         </div>
       </div>
@@ -95,113 +222,194 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
   `,
   styles: [`
     .subscription-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: var(--spacing-md);
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+      padding: var(--spacing-xl) 0;
+    }
+
+    .page-title {
+      font-size: var(--font-size-3xl);
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-md);
+    }
+
+    .title-icon {
+      font-size: var(--font-size-4xl);
+    }
+
+    .page-description {
+      font-size: var(--font-size-lg);
+      color: var(--gray-600);
+      line-height: 1.6;
       max-width: 600px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin: 0 auto;
     }
 
-    h2 {
-      color: #333;
-      margin-bottom: 0.5rem;
-      text-align: center;
-      font-size: 1.8rem;
+    .form-container {
+      background: #ffffff;
+      border-radius: var(--border-radius-xl);
+      box-shadow: var(--shadow-xl);
+      padding: var(--spacing-2xl);
+      margin-bottom: var(--spacing-2xl);
+      border: 1px solid var(--gray-200);
+      border-top: 4px solid var(--primary-color);
+      position: relative;
     }
 
-    .description {
-      color: #666;
-      font-size: 1rem;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .subscription-form {
-      margin-bottom: 2rem;
+    .form-container.form-loading {
+      pointer-events: none;
+      opacity: 0.7;
     }
 
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: var(--spacing-xl);
     }
 
     .form-label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #333;
-      font-weight: 500;
-      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-md);
+      color: var(--gray-800);
+      font-weight: 600;
+    }
+
+    .label-required {
+      color: var(--secondary-color);
+      font-weight: 700;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: var(--spacing-md);
+      z-index: 2;
+      pointer-events: none;
     }
 
     .form-input {
       width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #ddd;
-      border-radius: 4px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
+      padding: var(--spacing-md) var(--spacing-3xl);
+      border: 2px solid var(--gray-300);
+      border-radius: var(--border-radius-lg);
+      font-size: var(--font-size-lg);
+      transition: all 0.3s ease;
+      background-color: #ffffff;
       box-sizing: border-box;
+      min-height: 56px;
     }
 
     .form-input:focus {
       outline: none;
-      border-color: #007bff;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
     }
 
-    .form-input.error {
-      border-color: #dc3545;
+    .form-input.input-error {
+      border-color: var(--secondary-color);
+      background-color: #fef2f2;
     }
+
+    .form-input.input-success {
+      border-color: var(--success-color);
+      background-color: #f0fdf4;
+    }
+
+    .input-status {
+      position: absolute;
+      right: var(--spacing-md);
+      z-index: 2;
+    }
+
+    .status-icon {
+      font-size: var(--font-size-lg);
+      font-weight: 700;
+    }
+
+    .status-icon.success { color: var(--success-color); }
+    .status-icon.error { color: var(--secondary-color); }
 
     .error-messages {
-      margin-top: 0.5rem;
+      margin-top: var(--spacing-md);
     }
 
     .error-message {
-      color: #dc3545;
-      font-size: 0.875rem;
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--secondary-color);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: var(--border-radius-md);
+    }
+
+    .field-hint {
+      margin-top: var(--spacing-md);
+      color: var(--gray-600);
+      font-size: var(--font-size-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background-color: var(--gray-100);
+      border-radius: var(--border-radius-md);
+      border-left: 3px solid var(--primary-color);
     }
 
     .submit-button {
       width: 100%;
-      padding: 0.75rem 1.5rem;
-      background-color: #007bff;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: var(--primary-color);
       color: white;
       border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      font-weight: 500;
+      border-radius: var(--border-radius-lg);
+      font-size: var(--font-size-lg);
+      font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-      position: relative;
-      min-height: 48px;
+      transition: all 0.3s ease;
+      min-height: 64px;
+      box-shadow: var(--shadow-md);
     }
 
     .submit-button:hover:not(:disabled) {
-      background-color: #0056b3;
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
     }
 
     .submit-button:disabled {
-      background-color: #6c757d;
+      background: var(--gray-500);
       cursor: not-allowed;
     }
 
-    .submit-button.loading {
-      background-color: #6c757d;
-    }
-
-    .loading-text {
+    .button-content, .loading-content {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: var(--spacing-md);
     }
 
     .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff;
-      border-top: 2px solid transparent;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid #ffffff;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -211,117 +419,134 @@ import { SubscriptionStatus, SubscriptionState } from '../models/subscription.mo
       100% { transform: rotate(360deg); }
     }
 
-    .success-message {
+    .form-features {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-xl);
+      padding-top: var(--spacing-xl);
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      background-color: var(--gray-50);
+      border-radius: var(--border-radius-lg);
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: var(--z-modal);
+      border-radius: var(--border-radius-xl);
+    }
+
+    .status-message {
+      background: #ffffff;
+      border-radius: var(--border-radius-xl);
+      box-shadow: var(--shadow-xl);
+      padding: var(--spacing-2xl);
       text-align: center;
-      padding: 2rem;
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
-      border-radius: 4px;
-      color: #155724;
+      border: 1px solid var(--gray-200);
     }
 
-    .success-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      color: #28a745;
+    .status-icon-large {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      margin-bottom: var(--spacing-xl);
+      border-radius: 50%;
+      position: relative;
     }
 
-    .success-message h3 {
-      margin: 0 0 1rem 0;
-      color: #155724;
+    .status-icon-large .icon {
+      font-size: var(--font-size-4xl);
+      font-weight: 700;
+      z-index: 1;
     }
 
-    .success-message p {
-      margin: 0;
-      color: #155724;
+    .status-icon-large.success .icon { color: var(--success-color); }
+    .status-icon-large.error .icon { color: var(--secondary-color); }
+
+    .status-title {
+      font-size: var(--font-size-2xl);
+      font-weight: 700;
+      margin-bottom: var(--spacing-md);
+      color: var(--gray-900);
     }
 
-    .error-message-container {
-      text-align: center;
-      padding: 2rem;
-      background-color: #f8d7da;
-      border: 1px solid #f5c6cb;
-      border-radius: 4px;
-      color: #721c24;
+    .status-description {
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      color: var(--gray-600);
+      margin-bottom: var(--spacing-xl);
     }
 
-    .error-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      color: #dc3545;
-    }
-
-    .error-message-container h3 {
-      margin: 0 0 1rem 0;
-      color: #721c24;
-    }
-
-    .error-message-container p {
-      margin: 0 0 1.5rem 0;
-      color: #721c24;
-    }
-
-    .retry-button {
-      padding: 0.5rem 1rem;
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.3s ease;
-    }
-
-    .retry-button:hover:not(:disabled) {
-      background-color: #c82333;
-    }
-
-    .retry-button:disabled {
-      background-color: #6c757d;
-      cursor: not-allowed;
-    }
-
-    .success-button {
-      padding: 0.5rem 1rem;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.3s ease;
-      margin-top: 1rem;
-    }
-
-    .success-button:hover {
-      background-color: #218838;
-    }
-
-    .retry-section {
+    .status-actions {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--spacing-md);
     }
 
-    .retry-info {
-      color: #6c757d;
-      font-size: 0.8rem;
+    .action-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md) var(--spacing-xl);
+      border: none;
+      border-radius: var(--border-radius-lg);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 200px;
+      min-height: 48px;
     }
 
-    @media (max-width: 768px) {
-      .subscription-container {
-        margin: 1rem;
-        padding: 1.5rem;
-      }
+    .action-button.primary {
+      background: var(--success-color);
+      color: white;
+    }
 
-      h2 {
-        font-size: 1.5rem;
-      }
+    .action-button.secondary {
+      background: var(--secondary-color);
+      color: white;
+    }
 
-      .form-input {
-        font-size: 16px; /* Prevents zoom on iOS */
-      }
+    .action-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .action-button:disabled {
+      background: var(--gray-500);
+      cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (min-width: 576px) {
+      .form-features { grid-template-columns: repeat(3, 1fr); }
+      .status-actions { flex-direction: row; }
+    }
+
+    @media (max-width: 575.98px) {
+      .subscription-container { padding: var(--spacing-sm); }
+      .form-container { padding: var(--spacing-lg); }
+      .page-title { font-size: var(--font-size-2xl); flex-direction: column; }
+      .form-input { font-size: 16px; }
+      .action-button { min-width: 100%; }
     }
   `]
 })
